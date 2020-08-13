@@ -1,4 +1,4 @@
-# avax-hardening
+# How to Secure Your AVAX Node
 avax-hardening
 
 
@@ -22,19 +22,28 @@ avax-hardening
 ### Updates
 ```bash
 # Fetch the list of available updates, upgrade current
-sudo apt update &&
-sudo apt upgrade -y &&
-sudo apt autoremove -y
+sudo apt-get update -qq
+sudo apt-get upgrade -y -qq
+sudo apt-get autoremove -y
+sudo apt-get autoclean -y
+# Install unattended-upgrades
+sudo apt-get install unattended-upgrades apt-listchanges -y -qq
+# Enable unattended upgrades
+
+sudo apt-get install mailutils -y
+sudo apt-get install cron-apt
+sudo reboot
 ```
 
 
 
 
-# CREATE ADMIN USER
+# Step 1 - Creating your standard user
 ### create admin user
 ```bash
-USERNAME=admin
+USERNAME=avaxops
 PASSWORD=Akhisar2014.
+SYS_ADMIN_EMAIL=ssakiz@gmail.com
 
 sudo deluser --remove-home ${USERNAME}
 sudo useradd -m -s /bin/bash -g sudo -c "Administrative User" "${USERNAME}"
@@ -61,10 +70,16 @@ sudo ufw status verbose &&
 sudo systemctl enable ufw
 
 # install fail2ban
-sudo apt-get install fail2ban
-sudo service fail2ban status
+sudo apt-get install fail2ban -y -qq
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+sudo systemctl fail2ban status
 sudo fail2ban-client status
+sudo tail -f /var/log/fail2ban.log
 
+sed -i -e "s/destemail = root@localhost/$SYS_ADMIN_EMAIL/g" /etc/fail2ban/jail.conf
+sed -e "s/\[recidive\]\\n/lols/g" /etc/fail2ban/jail.conf
 
 # Secure shared memory
 echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
@@ -188,6 +203,9 @@ The services names are: `bitcoind`,`lightningd`,`btc-rpc-explorer`,`eps` and `sp
 
 # disable root login, disable password auth
 sudo sed -i 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config &&
+sudo sed -i 's/^LoginGraceTime .*/LoginGraceTime 60/' /etc/ssh/sshd_config &&
+sudo sed -i 's/^MaxStartups .*/MaxStartups 2/' /etc/ssh/sshd_config &&
+sudo sed -i 's/^StrictModes .*/StrictModes yes/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_config &&
 sudo service ssh reload
@@ -235,6 +253,19 @@ root            hard    msgqueue        8192000
 *               soft    msgqueue        8192000 
 root            soft    msgqueue        8192000 
 EOF
+
+
+# swap
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+
+# Install rkhunter and do an initial file scan.
+sudo apt -y install rkhunter
+sudo rkhunter --propupd
+
 ```
 
 

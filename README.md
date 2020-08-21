@@ -26,11 +26,13 @@ sudo apt-get update -qq
 sudo apt-get upgrade -y -qq
 sudo apt-get autoremove -y
 sudo apt-get autoclean -y
+
+
 # Install unattended-upgrades
 sudo apt-get install unattended-upgrades apt-listchanges -y -qq
 # Enable unattended upgrades
 
-sudo apt-get install mailutils -y
+sudo apt-get install mailutils wget curl -y
 sudo apt-get install cron-apt
 sudo reboot
 ```
@@ -41,8 +43,10 @@ sudo reboot
 # Step 1 - Creating your standard user
 ### create admin user
 ```bash
+# Settings
 USERNAME=avaxops
-PASSWORD=Akhisar2014.
+PASSWORD=XXXXXXXX   # Change this before run
+NODE_PUBLIC_IP=XX.XX.XX.XX # Change this before run
 SYS_ADMIN_EMAIL=ssakiz@gmail.com
 
 sudo deluser --remove-home ${USERNAME}
@@ -52,24 +56,111 @@ sudo sh -c "echo \"${USERNAME} ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers"
 sudo usermod -aG systemd-journal ${USERNAME}
 
 echo "${USERNAME}:${PASSWORD}" | sudo chpasswd 
+
+# Create & copy ssh key in your local linux server to NODE Server
+ssh-keygen -b 4096
+ssh-copy-id ${USERNAME}@<hostname>
+
+# ssh to NODE server via ssh key without passwd.
+ssh ${USERNAME}@<hostname>
+
 ```
+
+
+### service definition
+```bash
+
+# installl ava node with gecko user
+sudo useradd -r -m gecko
+sudo su - gecko
+cd /home/gecko
+wget https://github.com/ava-labs/gecko/releases/download/v0.6.1-rc.2/avalanche-linux-0.6.1.tar.gz
+tar xvfz avalanche-linux-0.6.1.tar.gz
+ln -s avalanche-0.6.0/avalanche avalanche
+exit
+
+
+# create and start gecko service
+
+
+sudo cat <<'EOF'| sudo tee -a /usr/lib/systemd/system/gecko.service
+[Unit]
+Description=AVA node
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+User=gecko
+Group=gecko
+WorkingDirectory=/home/gecko
+ExecStart=avalanche
+KillMode=process
+KillSignal=SIGINT
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=AvaNodeGecko
+
+Restart=on-failure
+RestartSec=10
+
+
+# Hardening measures
+####################
+# Provide a private /tmp and /var/tmp.
+PrivateTmp=true
+
+# Mount /usr, /boot/ and /etc read-only for the process.
+ProtectSystem=full
+
+# Deny access to /home, /root and /run/user
+# ProtectHome=true
+
+# Disallow the process and all of its children to gain
+# new privileges through execve().
+NoNewPrivileges=true
+
+# Use a new /dev namespace only populated with API pseudo devices
+# such as /dev/null, /dev/zero and /dev/random.
+PrivateDevices=true
+
+# Deny the creation of writable and executable memory mappings.
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+
+
+sudo systemctl daemon-reload
+sudo systemctl enable gecko.service
+sudo systemctl start gecko.service
+sudo systemctl stop gecko.service
+sudo sytemctl status gecko.service
+sudo journalctl -u gecko
+sudo journalctl -u gecko -f
+
+
+```
+
 
 
 ### Security
 ```bash
 # Setup firewall
-sudo apt-get install ufw  &&
+sudo apt-get install ufw -y  &&
 sudo ufw default deny incoming &&
 sudo ufw default allow outgoing &&
 sudo ufw allow ssh/tcp && 
 sudo ufw allow http/tcp &&
-sudo ufw allow 30303/tcp &&
+sudo ufw allow 22/tcp &&
 sudo ufw logging on  &&
 sudo ufw enable &&
 sudo ufw status verbose &&
 sudo systemctl enable ufw
 
-# install fail2ban
+# Intrusion detection using Fail2Ban
+# After 3 failed login attempts from a single IP address, it blocks that IP address from trying to login again for 10 minutes.
 sudo apt-get install fail2ban -y -qq
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 sudo systemctl enable fail2ban
@@ -78,8 +169,19 @@ sudo systemctl fail2ban status
 sudo fail2ban-client status
 sudo tail -f /var/log/fail2ban.log
 
-sed -i -e "s/destemail = root@localhost/$SYS_ADMIN_EMAIL/g" /etc/fail2ban/jail.conf
-sed -e "s/\[recidive\]\\n/lols/g" /etc/fail2ban/jail.conf
+sudo cat <<'EOF'| sudo tee -a /etc/fail2ban/jail.local
+[sshd]
+enabled = true
+port = 22
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+EOF
+
+sudo systemctl restart fail2ban
+
+
+
 
 # Secure shared memory
 echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
@@ -255,12 +357,17 @@ root            soft    msgqueue        8192000
 EOF
 
 
-# swap
+#  Adding more swap
+sudo cat /proc/swaps
 sudo fallocate -l 4G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
+sudo swapon -s
 
+sudo cat << 'EOF' | sudo tee -a /etc/fstab
+/swapfile  none  swap  sw  0 0
+EOF
 
 # Install rkhunter and do an initial file scan.
 sudo apt -y install rkhunter

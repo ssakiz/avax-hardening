@@ -67,23 +67,33 @@ ssh ${USERNAME}@<hostname>
 ```
 
 
+# set log rotation
+sudo journalctl --vacuum-size=1G
+```
+
+
 ### service definition
 ```bash
 
-# installl ava node with gecko user
+# installl ava node with gecko user / upgrade 
+sudo systemctl stop gecko.service
 sudo useradd -r -m gecko
 sudo su - gecko
 cd /home/gecko
-wget https://github.com/ava-labs/gecko/releases/download/v0.6.1-rc.2/avalanche-linux-0.6.1.tar.gz
-tar xvfz avalanche-linux-0.6.1.tar.gz
-ln -s avalanche-0.6.0/avalanche avalanche
+unlink avalanche
+rm -rf avalanche-0.*
+rm -rf ./gecko/db/
+wget https://github.com/ava-labs/gecko/releases/download/v0.6.2/avalanche-linux-0.6.2.tar.gz
+tar xvfz avalanche-linux-0.6.2.tar.gz
+ln -s avalanche-0.6.2/avalanche avalanche
+rm -rf *.tar.gz
 exit
 
 
 # create and start gecko service
 
 
-sudo cat <<'EOF'| sudo tee -a /usr/lib/systemd/system/gecko.service
+sudo bash -c 'cat << EOF > /etc/systemd/system/gecko.service
 [Unit]
 Description=AVA node
 Wants=network-online.target
@@ -93,16 +103,15 @@ After=network.target network-online.target
 User=gecko
 Group=gecko
 WorkingDirectory=/home/gecko
-ExecStart=avalanche
+ExecStart=/home/gecko/avalanche
 KillMode=process
 KillSignal=SIGINT
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=AvaNodeGecko
+SyslogIdentifier=avalanche
 
 Restart=on-failure
 RestartSec=10
-
 
 # Hardening measures
 ####################
@@ -129,19 +138,25 @@ MemoryDenyWriteExecute=true
 [Install]
 WantedBy=multi-user.target
 
-EOF
+EOF'
 
 
 sudo systemctl daemon-reload
 sudo systemctl enable gecko.service
 sudo systemctl start gecko.service
 sudo systemctl stop gecko.service
-sudo sytemctl status gecko.service
+sudo systemctl status gecko.service
 sudo journalctl -u gecko
 sudo journalctl -u gecko -f
-
-
 ```
+
+
+### Controlling services
+
+- Start: `sudo systemctl start gecko.service>`
+- Restart: `sudo systemctl restart gecko.service>`
+- Stop: `sudo systemctl stop gecko.service`
+- Status: `sudo systemctl status gecko.service`
 
 
 
@@ -160,7 +175,7 @@ sudo ufw status verbose &&
 sudo systemctl enable ufw
 
 # Intrusion detection using Fail2Ban
-# After 3 failed login attempts from a single IP address, it blocks that IP address from trying to login again for 10 minutes.
+# After 10 failed login attempts from a single IP address, it blocks that IP address from trying to login again for 10 minutes.
 sudo apt-get install fail2ban -y -qq
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 sudo systemctl enable fail2ban
@@ -169,25 +184,14 @@ sudo systemctl fail2ban status
 sudo fail2ban-client status
 sudo tail -f /var/log/fail2ban.log
 
-sudo cat <<'EOF'| sudo tee -a /etc/fail2ban/jail.local
-[sshd]
-enabled = true
-port = 22
-filter = sshd
-logpath = /var/log/auth.log
-maxretry = 3
-EOF
-
 sudo systemctl restart fail2ban
-
-
 
 
 # Secure shared memory
 echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
 ```
 
-Edit `/etc/sysctl.conf`
+### Edit /etc/sysctl.conf
 ```bash
 # IP Spoofing protection
 sudo sed -i 's/#net.ipv4.conf.all.rp_filter=1/net.ipv4.conf.all.rp_filter=1/' /etc/sysctl.conf &&
@@ -226,75 +230,8 @@ sudo sed -i 's/#net.ipv4.conf.default.accept_redirects = 0/net.ipv4.conf.default
 sudo sed -i 's/#net.ipv6.conf.default.accept_redirects = 0/net.ipv6.conf.default.accept_redirects = 0/' /etc/sysctl.conf &&
 
 # Ignore Directed pings
-sudo sed -i 's/#net.ipv4.icmp_echo_ignore_all = 1/net.ipv4.icmp_echo_ignore_all = 1/' /etc/sysctl.conf &&
+sudo sed -i 's/#net.ipv4.icmp_echo_ignore_all = 1/net.ipv4.icmp_echo_ignore_all = 1/' /etc/sysctl.conf 
 ```
-Copy [this](https://github.com/bitembassy/home-node/raw/master/misc/sysctl.conf), paste at the bottom and save.
-
-
-### Common dependencies
-
-```bash
-sudo apt install -y  git &&
-```
-
-## Bitcoin Core
-
-### Installing
-```bash
-# Create dir for installation files
-mkdir -p ~/bitcoin-installation && cd ~/bitcoin-installation && rm -rf * &&
-
-# Download binaries
-wget https://bitcoincore.org/bin/bitcoin-core-0.17.1/bitcoin-0.17.1-x86_64-linux-gnu.tar.gz &&
-
-# Download signature
-wget https://bitcoincore.org/bin/bitcoin-core-0.17.1/SHA256SUMS.asc &&
-
-# Verify signature - should see "Good signature from Wladimir J. van der Laan (Bitcoin Core binary release signing key) <laanwj@gmail.com>"
-gpg --verify SHA256SUMS.asc &&
-
-# Verify the binary matches the signed hash in SHA256SUMS.asc - should see "bitcoin-0.17.1-x86_64-linux-gnu.tar.gz: OK"
-grep bitcoin-0.17.1-x86_64-linux-gnu.tar.gz SHA256SUMS.asc | sha256sum -c - &&
-
-# Unpack binaries
-tar xvf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz &&
-
-# Install binaries system-wide (requires password)
-sudo cp bitcoin-0.17.1/bin/* /usr/bin
-```
-
-
-## Startup services
-
-> Note: If you already have the services running from the terminal, stop them before starting the systemd service.
-
-### Stage 1: Bitcoin, EPS, btc-rpc-explorer
-
-```bash
-# Download home-node repo
-git clone https://github.com/bitembassy/home-node ~/home-node && cd ~/home-node &&
-
-# Verify signature - should see "Good signature from Nadav Ivgi <nadav@shesek.info>"
-git verify-commit HEAD &&
-
-# Copy service init files
-sudo cp init/{bitcoind,eps,btc-rpc-explorer}.service /etc/systemd/system/ &&
-
-# Reload systemd, enable services, start them
-sudo systemctl daemon-reload &&
-sudo systemctl start bitcoind && sudo systemctl enable bitcoind &&
-sudo systemctl start eps && sudo systemctl enable eps &&
-sudo systemctl start btc-rpc-explorer && sudo systemctl enable btc-rpc-explorer
-```
-
-### Controlling services
-
-- Start: `sudo systemctl start <name>`
-- Restart: `sudo systemctl restart <name>`
-- Stop: `sudo systemctl stop <name>`
-- Status: `sudo systemctl status <name>`
-
-The services names are: `bitcoind`,`lightningd`,`btc-rpc-explorer`,`eps` and `spark-wallet`
 
 
 
@@ -302,6 +239,7 @@ The services names are: `bitcoind`,`lightningd`,`btc-rpc-explorer`,`eps` and `sp
 
 ```bash
 
+sudo cp  /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
 
 # disable root login, disable password auth
 sudo sed -i 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config &&
@@ -311,19 +249,6 @@ sudo sed -i 's/^StrictModes .*/StrictModes yes/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_config &&
 sudo service ssh reload
-
-
-sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && 
-sudo sed -i 's/Port 22/Port '$MY_SERVER_SSH_PORT'/' /etc/ssh/sshd_config &&
-sudo sed -i 's/#Port '$MY_SERVER_SSH_PORT'/Port '$MY_SERVER_SSH_PORT'/' /etc/ssh/sshd_config &&
-sudo sed -i 's/X11Forwarding yes/X11Forwarding no/' /etc/ssh/sshd_config &&
-sudo sed -i 's/AcceptEnv LANG LC_*/AcceptEnv LANG LC_* GIT_/' /etc/ssh/sshd_config &&
-sudo sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config &&
-sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config &&
-sudo sed -zi 's/ClientAliveInterval 60\|$/ClientAliveInterval 60\n/' /etc/ssh/sshd_config &&
-sudo sed -zi 's/ClientAliveCountMax 600\|$/ClientAliveCountMax 600\n/' /etc/ssh/sshd_config &&
-sudo sed -zi 's/AllowAgentForwarding no\|$/AllowAgentForwarding yes/' /etc/ssh/sshd_config
-
 ```
 
 
@@ -332,8 +257,8 @@ sudo sed -zi 's/AllowAgentForwarding no\|$/AllowAgentForwarding yes/' /etc/ssh/s
 ```bash
 
 
-# disable root login, disable password auth
-cat >> /etc/security/limits.conf <<'EOF'
+# tuning 
+sudo bash -c 'cat << EOF >> /etc/security/limits.conf
 *               hard    core            128000
 root            hard    core            128000
 *               soft    core            128000
@@ -354,8 +279,9 @@ root            soft    nofile          128000
 root            hard    msgqueue        8192000 
 *               soft    msgqueue        8192000 
 root            soft    msgqueue        8192000 
-EOF
+EOF'
 
+reboot
 
 #  Adding more swap
 sudo cat /proc/swaps
@@ -382,29 +308,17 @@ sudo rkhunter --propupd
 ## Time synchonization 
 
 ```bash
-#Install chrony service:
 
-sudo apt-get install chrony
-sudo service chrony status
-
-Add NTP servers:
-
-sudo nano /etc/chrony.conf
-Insert ntp servers:
-
-server 0.pool.ntp.org iburst
-server 1.pool.ntp.org iburst
-server 2.pool.ntp.org iburst
-server 3.pool.ntp.org iburst
-
-
-Check status:
-
-sudo chronyc tracking
-apt install chrony -y
-sed '1a server ntp.aliyun.com iburst' /etc/chrony/chrony.conf -i
-sed '1a server 0.cn.pool.ntp.org iburst' /etc/chrony/chrony.conf -i
-sed '1a server ntp1.aliyun.com iburst' /etc/chrony/chrony.conf -i
-systemctl restart chronyd
+###  set correct timezone & logi
+```bash
+sudo timedatectl set-timezone Europe/Istanbul
+sudo timedatectl status
+                      Local time: Fri 2020-08-21 20:10:06 +03
+                  Universal time: Fri 2020-08-21 17:10:06 UTC
+                        RTC time: Fri 2020-08-21 20:10:06
+                       Time zone: Europe/Istanbul (+03, +0300)
+       System clock synchronized: yes
+systemd-timesyncd.service active: yes
+                 RTC in local TZ: yes
 
 ```

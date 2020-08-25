@@ -197,6 +197,18 @@ wget https://raw.githubusercontent.com/ssakiz/avax-hardening/master/sysctl.conf
 sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
 sudo cp sysctl.conf /etc/sysctl.conf
 sudo sysctl -e -p
+
+
+
+sudo bash -c 'cat << EOF >> /etc/default/grub
+GRUB_CMDLINE_LINUX="ipv6.disable=1"
+GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1"
+EOF'	
+
+sudo update-grub
+
+sudo systemctl reboot
+
 ```
 
 

@@ -82,8 +82,8 @@ sudo su - gecko
 cd /home/gecko
 unlink avalanche
 rm -rf avalanche-0.*
-rm -rf ./gecko/db/
-wget https://github.com/ava-labs/gecko/releases/download/v0.6.2/avalanche-linux-0.6.2.tar.gz
+# rm -rf ./gecko/db/
+wget https://github.com/ava-labs/gecko/releases/download/v0.6.4/avalanche-linux-0.6.4.tar.gz
 tar xvfz avalanche-linux-0.6.2.tar.gz
 ln -s avalanche-0.6.2/avalanche avalanche
 rm -rf *.tar.gz

@@ -196,7 +196,7 @@ echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
 wget https://raw.githubusercontent.com/ssakiz/avax-hardening/master/sysctl.conf
 sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
 sudo cp sysctl.conf /etc/sysctl.conf
-sudo sysctl -p
+sudo sysctl -e -p
 ```
 
 

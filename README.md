@@ -29,7 +29,7 @@ sudo apt-get autoclean -y
 
 
 # Install unattended-upgrades
-sudo apt-get install unattended-upgrades apt-listchanges -y -qq
+# sudo apt-get install unattended-upgrades apt-listchanges -y -qq
 # Enable unattended upgrades
 
 sudo apt-get install mailutils wget curl -y
@@ -196,7 +196,7 @@ echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
 wget https://raw.githubusercontent.com/ssakiz/avax-hardening/master/sysctl.conf
 sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
 sudo cp sysctl.conf /etc/sysctl.conf
-sysctl -p
+sudo sysctl -p
 ```
 
 
@@ -266,9 +266,6 @@ sudo apt -y install rkhunter
 sudo rkhunter --propupd
 
 ```
-
-
-
 
 
 ## Time synchonization 

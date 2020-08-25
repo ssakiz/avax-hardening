@@ -193,44 +193,10 @@ echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
 
 ### Edit /etc/sysctl.conf
 ```bash
-# IP Spoofing protection
-sudo sed -i 's/#net.ipv4.conf.all.rp_filter=1/net.ipv4.conf.all.rp_filter=1/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.conf.default.rp_filter=1/net.ipv4.conf.default.rp_filter=1/' /etc/sysctl.conf &&
-
-# Ignore ICMP broadcast requests
-sudo sed -i 's/#net.ipv4.icmp_echo_ignore_broadcasts = 1/net.ipv4.icmp_echo_ignore_broadcasts = 1/' /etc/sysctl.conf &&
-
-# Disable source packet routing
-sudo sed -i 's/#net.ipv4.conf.all.accept_source_route = 0/net.ipv4.conf.all.accept_source_route = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv6.conf.all.accept_source_route = 0/net.ipv6.conf.all.accept_source_route = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.conf.default.accept_source_route = 0/net.ipv4.conf.default.accept_source_route = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv6.conf.default.accept_source_route = 0/net.ipv6.conf.default.accept_source_route = 0/' /etc/sysctl.conf &&
-
-# Ignore send redirects
-sudo sed -i 's/#net.ipv4.conf.all.send_redirects = 0/net.ipv4.conf.all.send_redirects = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.conf.default.send_redirects = 0/net.ipv4.conf.default.send_redirects = 0/' /etc/sysctl.conf &&
-
-
-# Block SYN attacks
-sudo sed -i 's/#net.ipv4.tcp_syncookies=1/net.ipv4.tcp_syncookies=1/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.tcp_max_syn_backlog = 2048/net.ipv4.tcp_max_syn_backlog = 2048/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.tcp_synack_retries = 2/net.ipv4.tcp_synack_retries = 2/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.tcp_syn_retries = 5/net.ipv4.tcp_syn_retries = 5/' /etc/sysctl.conf &&
-
-# Log Martians
-net.ipv4.conf.all.log_martians = 1
-sudo sed -i 's/#net.ipv4.conf.all.log_martians = 1/net.ipv4.conf.all.log_martians = 1/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.icmp_ignore_bogus_error_responses = 1/net.ipv4.icmp_ignore_bogus_error_responses = 1/' /etc/sysctl.conf &&
-
-
-# Ignore ICMP redirects
-sudo sed -i 's/#net.ipv4.conf.all.accept_redirects = 0/net.ipv4.conf.all.accept_redirects = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv6.conf.all.accept_redirects = 0/net.ipv6.conf.all.accept_redirects = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv4.conf.default.accept_redirects = 0/net.ipv4.conf.default.accept_redirects = 0/' /etc/sysctl.conf &&
-sudo sed -i 's/#net.ipv6.conf.default.accept_redirects = 0/net.ipv6.conf.default.accept_redirects = 0/' /etc/sysctl.conf &&
-
-# Ignore Directed pings
-sudo sed -i 's/#net.ipv4.icmp_echo_ignore_all = 1/net.ipv4.icmp_echo_ignore_all = 1/' /etc/sysctl.conf 
+wget https://raw.githubusercontent.com/ssakiz/avax-hardening/master/sysctl.conf
+sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
+sudo cp sysctl.conf /etc/sysctl.conf
+sysctl -p
 ```
 
 

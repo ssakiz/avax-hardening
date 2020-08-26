@@ -3,20 +3,6 @@ avax-hardening
 
 
 
-# Setting up a full AVAX node
-### A step-by-step guide for setting up the perfect Bitcoin box on Ubuntu. Including:
-* [Preparing the environment](https://github.com/bitembassy/home-node/blob/master/README.md#preparing-the-environment)
-* Services:
-  * [Tor](https://github.com/bitembassy/home-node/blob/master/README.md#tor)
-  * [Bitcoin Core](https://github.com/bitembassy/home-node/blob/master/README.md#bitcoin-core)
-
-* [Adding to startup](https://github.com/bitembassy/home-node/blob/master/README.md#startup-services)
-* [Updating software](https://github.com/bitembassy/home-node/blob/master/README.md#updating-software)
-
-> Note: a dedicated, always-online computer and a fresh Ubuntu 18.04 install are recommended. Some of the settings may interfere with existing software.
-
-
-
 ## Preparing the environment
 
 ### Updates
@@ -169,6 +155,7 @@ sudo ufw default allow outgoing &&
 sudo ufw allow ssh/tcp && 
 sudo ufw allow http/tcp &&
 sudo ufw allow 22/tcp &&
+sudo ufw allow proto tcp from 0.0.0.0/0 port 9651 to any 
 sudo ufw logging on  &&
 sudo ufw enable &&
 sudo ufw status verbose &&
@@ -228,6 +215,22 @@ sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/s
 sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_config &&
 sudo service ssh reload
 ```
+
+
+
+## Configure Multi-Factor Authentication 
+
+
+```bash
+
+# Installing the Google PAM Module
+sudo apt-get update
+sudo apt-get install libpam-google-authenticator
+
+# Configuring 2FA for a User
+
+```
+
 
 
 ## Tuning (optional)

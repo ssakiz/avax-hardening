@@ -66,12 +66,12 @@ sudo systemctl stop gecko.service
 sudo useradd -r -m gecko
 sudo su - gecko
 cd /home/gecko
-unlink avalanche
+unlink latest
 rm -rf avalanche-0.*
 # rm -rf ./gecko/db/
 wget https://github.com/ava-labs/gecko/releases/download/v0.6.4/avalanche-linux-0.6.4.tar
 tar xvf avalanche-linux-0.6.4.tar
-ln -sf avalanche-0.6.4/avalanche avalanche
+ln -sf avalanche-0.6.4 latest
 rm -rf *.tar.gz
 exit
 
@@ -88,8 +88,8 @@ After=network.target network-online.target
 [Service]
 User=gecko
 Group=gecko
-WorkingDirectory=/home/gecko
-ExecStart=/home/gecko/avalanche
+WorkingDirectory=/home/gecko/latest
+ExecStart=/home/gecko/latest/avalanche
 KillMode=process
 KillSignal=SIGINT
 StandardOutput=syslog
@@ -123,7 +123,6 @@ MemoryDenyWriteExecute=true
 
 [Install]
 WantedBy=multi-user.target
-
 EOF'
 
 

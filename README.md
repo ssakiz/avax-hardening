@@ -216,11 +216,7 @@ sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_
 sudo service ssh reload
 ```
 
-
-
-## Configure Multi-Factor Authentication 
-
-
+## Configure Multi-Factor Authentication using Google Authenticator 
 ```bash
 
 # Installing the Google PAM Module
@@ -228,10 +224,26 @@ sudo apt-get update
 sudo apt-get install libpam-google-authenticator
 
 # Configuring 2FA for a User
+google-authenticator
 
+# Configuring ssh
+vi /etc/ssh/sshd_config
+
+ChallengeResponseAuthentication yes
+UseDNS no
+AddressFamily inet
+SyslogFacility AUTHPRIV
+PermitRootLogin no
+PasswordAuthentication yes
+
+vi /etc/pam.d/sshd 
+
+# Standard Un*x password updating.
+@include common-password
+auth required pam_google_authenticator.so
+
+sudo systemctl restart sshd.service
 ```
-
-
 
 ## Tuning (optional)
 

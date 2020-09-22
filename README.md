@@ -30,6 +30,9 @@ sudo reboot
 ### create admin user
 ```bash
 # Settings
+HOSTNAME=burcusan
+sudo hostname $HOSTNAME
+
 USERNAME=avaxops
 PASSWORD=XXXXXXXX   # Change this before run
 NODE_PUBLIC_IP=XX.XX.XX.XX # Change this before run
@@ -61,40 +64,40 @@ sudo journalctl --vacuum-size=1G
 ### service definition
 ```bash
 
-# installl ava node with gecko user / upgrade 
-sudo systemctl stop gecko.service
-sudo useradd -r -m gecko
-sudo su - gecko
-cd /home/gecko
+# installl ava node with avalanchego user / upgrade 
+sudo systemctl stop avalanchego.service
+sudo useradd -r -m avalanchego
+sudo su - avalanchego
+cd /home/avalanchego
 unlink latest
 rm -rf avalanche-0.*
-# rm -rf ./gecko/db/
-wget https://github.com/ava-labs/gecko/releases/download/v0.6.4/avalanche-linux-0.6.4.tar
-tar xvf avalanche-linux-0.6.4.tar
-ln -sf avalanche-0.6.4 latest
+# rm -rf ./avalanchego/db/
+wget https://github.com/ava-labs/avalanchego/releases/download/v1.0.0/avalanchego-linux-1.0.0.tar.gz
+tar xvfz avalanchego-linux-1.0.0.tar.gz
+ln -sf avalanche-1.0.0 latest
 rm -rf *.tar.gz
 exit
 
 
-# create and start gecko service
+# create and start avalanchego service
 
 
-sudo bash -c 'cat << EOF > /etc/systemd/system/gecko.service
+sudo bash -c 'cat << EOF > /etc/systemd/system/avalanchego.service
 [Unit]
-Description=AVA node
+Description=AVAX node
 Wants=network-online.target
 After=network.target network-online.target
 
 [Service]
-User=gecko
-Group=gecko
-WorkingDirectory=/home/gecko/latest
-ExecStart=/home/gecko/latest/avalanche
+User=avalanchego
+Group=avalanchego
+WorkingDirectory=/home/avalanchego/latest
+ExecStart=/home/avalanchego/latest/avalanchego
 KillMode=process
 KillSignal=SIGINT
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=avalanche
+SyslogIdentifier=avalanchego
 
 Restart=on-failure
 RestartSec=10
@@ -127,21 +130,21 @@ EOF'
 
 
 sudo systemctl daemon-reload
-sudo systemctl enable gecko.service
-sudo systemctl start gecko.service
-sudo systemctl stop gecko.service
-sudo systemctl status gecko.service
-sudo journalctl -u gecko
-sudo journalctl -u gecko -f
+sudo systemctl enable avalanchego.service
+sudo systemctl start avalanchego.service
+sudo systemctl stop avalanchego.service
+sudo systemctl status avalanchego.service
+sudo journalctl -u avalanchego
+sudo journalctl -u avalanchego -f
 ```
 
 
 ### Controlling services
 
-- Start: `sudo systemctl start gecko.service>`
-- Restart: `sudo systemctl restart gecko.service>`
-- Stop: `sudo systemctl stop gecko.service`
-- Status: `sudo systemctl status gecko.service`
+- Start: `sudo systemctl start avalanchego.service>`
+- Restart: `sudo systemctl restart avalanchego.service>`
+- Stop: `sudo systemctl stop avalanchego.service`
+- Status: `sudo systemctl status avalanchego.service`
 
 
 
@@ -152,10 +155,10 @@ sudo apt-get install ufw -y  &&
 sudo ufw default deny incoming &&
 sudo ufw default allow outgoing &&
 sudo ufw allow ssh/tcp && 
-sudo ufw allow http/tcp &&
+# sudo ufw allow http/tcp &&
 sudo ufw allow 22/tcp &&
-sudo ufw allow proto tcp from 0.0.0.0/0 port 9651 to any &&
-sudo ufw allow 9651/tcp &&
+# sudo ufw allow proto tcp from 0.0.0.0/0 port 9651 to any &&
+# sudo ufw allow 9651/tcp &&
 sudo ufw logging on  &&
 sudo ufw enable &&
 sudo ufw status verbose &&
@@ -211,7 +214,7 @@ sudo sed -i 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^LoginGraceTime .*/LoginGraceTime 60/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^MaxStartups .*/MaxStartups 2/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^StrictModes .*/StrictModes yes/' /etc/ssh/sshd_config &&
-sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config &&
+# sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_config &&
 sudo service ssh reload
 ```
@@ -221,7 +224,7 @@ sudo service ssh reload
 
 # Installing the Google PAM Module
 sudo apt-get update
-sudo apt-get install libpam-google-authenticator
+sudo apt-get install libpam-google-authenticator -y
 
 # Configuring 2FA for a User
 google-authenticator
@@ -230,6 +233,7 @@ google-authenticator
 vi /etc/ssh/sshd_config
 
 ChallengeResponseAuthentication yes
+
 UseDNS no
 AddressFamily inet
 SyslogFacility AUTHPRIV

@@ -18,12 +18,12 @@ sudo apt-get autoclean -y
 # sudo apt-get install unattended-upgrades apt-listchanges -y -qq
 # Enable unattended upgrades
 
-sudo apt-get install mailutils wget curl -y
+sudo apt-get install mailutils wget curl jq net-tools -y
 sudo apt-get install cron-apt
 sudo reboot
 ```
 
-
+167.114.36.162
 
 
 # Step 1 - Creating your standard user
@@ -45,7 +45,7 @@ sudo sh -c "echo \"${USERNAME} ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers"
 sudo usermod -aG systemd-journal ${USERNAME}
 
 echo "${USERNAME}:${PASSWORD}" | sudo chpasswd 
-
+ifco
 # Create & copy ssh key in your local linux server to NODE Server
 ssh-keygen -b 4096
 ssh-copy-id ${USERNAME}@<hostname>
@@ -163,6 +163,7 @@ sudo ufw logging on  &&
 sudo ufw enable &&
 sudo ufw status verbose &&
 sudo systemctl enable ufw
+sudo tail -f /var/log/ufw.log
 
 # Intrusion detection using Fail2Ban
 # After 10 failed login attempts from a single IP address, it blocks that IP address from trying to login again for 10 minutes.
@@ -178,7 +179,7 @@ sudo systemctl restart fail2ban
 
 
 # Secure shared memory
-echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
+sudo echo "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0" | sudo tee -a /etc/fstab
 ```
 
 ### Edit /etc/sysctl.conf
@@ -230,7 +231,7 @@ sudo apt-get install libpam-google-authenticator -y
 google-authenticator
 
 # Configuring ssh
-vi /etc/ssh/sshd_config
+sudo vi /etc/ssh/sshd_config
 
 ChallengeResponseAuthentication yes
 
@@ -240,7 +241,7 @@ SyslogFacility AUTHPRIV
 PermitRootLogin no
 PasswordAuthentication yes
 
-vi /etc/pam.d/sshd 
+sudo vi /etc/pam.d/sshd 
 
 # Standard Un*x password updating.
 @include common-password
@@ -278,7 +279,7 @@ root            hard    msgqueue        8192000
 root            soft    msgqueue        8192000 
 EOF'
 
-reboot
+sudo reboot
 
 #  Adding more swap
 sudo cat /proc/swaps

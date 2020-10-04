@@ -72,9 +72,9 @@ cd /home/avalanchego
 unlink latest
 rm -rf avalanche-0.*
 # rm -rf ./avalanchego/db/
-wget https://github.com/ava-labs/avalanchego/releases/download/v1.0.0/avalanchego-linux-1.0.0.tar.gz
-tar xvfz avalanchego-linux-1.0.0.tar.gz
-ln -sf avalanche-1.0.0 latest
+wget https://github.com/ava-labs/avalanchego/releases/download/v1.0.1/avalanchego-linux-1.0.1.tar.gz
+tar xvfz avalanchego-linux-1.0.1.tar.gz
+ln -sf avalanche-1.0.1 latest
 rm -rf *.tar.gz
 exit
 
@@ -105,7 +105,7 @@ RestartSec=10
 # Hardening measures
 ####################
 # Provide a private /tmp and /var/tmp.
-PrivateTmp=true
+# PrivateTmp=true
 
 # Mount /usr, /boot/ and /etc read-only for the process.
 ProtectSystem=full

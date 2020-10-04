@@ -158,7 +158,7 @@ sudo ufw allow ssh/tcp &&
 # sudo ufw allow http/tcp &&
 sudo ufw allow 22/tcp &&
 # sudo ufw allow proto tcp from 0.0.0.0/0 port 9651 to any &&
-# sudo ufw allow 9651/tcp &&
+sudo ufw allow 9651/tcp &&
 sudo ufw logging on  &&
 sudo ufw enable &&
 sudo ufw status verbose &&

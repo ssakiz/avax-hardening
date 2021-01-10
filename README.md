@@ -172,6 +172,7 @@ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
 sudo systemctl fail2ban status
+sudo fail2ban-client status sshd
 sudo fail2ban-client status
 sudo tail -f /var/log/fail2ban.log
 

@@ -218,6 +218,9 @@ sudo sed -i 's/^MaxStartups .*/MaxStartups 2/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^StrictModes .*/StrictModes yes/' /etc/ssh/sshd_config &&
 # sudo sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config &&
 sudo sed -i 's/^PermitEmptyPasswords .*/PermitEmptyPasswords no/' /etc/ssh/sshd_config &&
+-i s/#ClientAliveInterval "0/ClientAliveInterval 60/g sed" sshd_config
+
+-i s/#ClientAliveCountMax "3/ClientAliveCountMax 3/g sed" sshd_config
 sudo service ssh reload
 ```
 
@@ -241,6 +244,8 @@ AddressFamily inet
 SyslogFacility AUTHPRIV
 PermitRootLogin no
 PasswordAuthentication yes
+ClientAliveInterval 900
+ClientAliveCountMax 0
 
 sudo vi /etc/pam.d/sshd 
 

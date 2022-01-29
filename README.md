@@ -23,7 +23,7 @@ sudo apt-get install cron-apt
 sudo reboot
 ```
 
-167.114.36.162
+
 
 
 # Step 1 - Creating your standard user
